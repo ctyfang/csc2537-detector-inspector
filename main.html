@@ -1,0 +1,294 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Detector Inspector</title>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/3.7.0/chart.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            max-width: 1200px;
+            margin: 0 auto;
+            padding: 20px;
+            background-color: #f5f5f5;
+        }
+        .container {
+            display: flex;
+            flex-direction: column;
+            gap: 30px;
+        }
+        .plots-row {
+            display: flex;
+            flex-direction: row;
+            gap: 20px;
+            flex-wrap: wrap;
+        }
+        .plot-container {
+            background-color: white;
+            border-radius: 8px;
+            padding: 20px;
+            box-shadow: 0 2px 10px rgba(0, 0, 0, 0.1);
+            flex: 1;
+            min-width: 450px;
+        }
+        h1 {
+            color: #333;
+            text-align: center;
+        }
+        h2 {
+            color: #444;
+            margin-top: 0;
+        }
+        #bev-canvas {
+            width: 100%;
+            height: 400px;
+        }
+        #boxes-canvas {
+            width: 100%;
+            height: 400px;
+            display: block;
+            margin: 0 auto;
+            background-color: #f8f8f8;
+        }
+        @media (max-width: 950px) {
+            .plots-row {
+                flex-direction: column;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>Vehicle Detection Visualization</h1>
+        
+        <div class="plots-row">
+            <div class="plot-container">
+                <h2>Bird's Eye View</h2>
+                <canvas id="bev-canvas"></canvas>
+            </div>
+            
+            <div class="plot-container">
+                <h2>Image View</h2>
+                <canvas id="boxes-canvas"></canvas>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // Common vehicle data that will be used for both visualizations
+        const vehicles = [
+            {
+                // First vehicle
+                center: [50, 50, 1],
+                dimensions: [2, 4, 2],
+                rotation: Math.random() * 0.5 - 0.25,
+                color: '#ff4444'
+            },
+            {
+                // Second vehicle
+                center: [50, 100, 1],
+                dimensions: [2, 4, 2],
+                rotation: Math.random() * 0.7 - 0.35,
+                color: '#4444ff'
+            }
+        ];
+        
+        // Helper function to create 3D box corners
+        function createBox3D(vehicle) {
+            const [cx, cy, cz] = vehicle.center;
+            const [width, length, height] = vehicle.dimensions;
+            const ry = vehicle.rotation;
+            
+            // Create the 8 corners of the box
+            const corners = [
+                [-width/2, -length/2, -height/2], // 0: left bottom back
+                [width/2, -length/2, -height/2],  // 1: right bottom back
+                [width/2, length/2, -height/2],   // 2: right top back
+                [-width/2, length/2, -height/2],  // 3: left top back
+                [-width/2, -length/2, height/2],  // 4: left bottom front
+                [width/2, -length/2, height/2],   // 5: right bottom front
+                [width/2, length/2, height/2],    // 6: right top front
+                [-width/2, length/2, height/2]    // 7: left top front
+            ];
+            
+            // Apply rotation around y-axis
+            const cosY = Math.cos(ry);
+            const sinY = Math.sin(ry);
+            
+            const rotatedCorners = corners.map(([x, y, z]) => {
+                // Apply y-axis rotation
+                const rotX = x * cosY + z * sinY;
+                const rotZ = -x * sinY + z * cosY;
+                
+                // Apply translation
+                return [rotX + cx, y + cy, rotZ + cz];
+            });
+            
+            return rotatedCorners;
+        }
+
+        // 1. Bird's Eye View (BEV) Detection Plot
+        function createBEVPlot() {
+            // Generate BEV data from the 3D boxes
+            const bevData = [];
+            
+            for (const vehicle of vehicles) {
+                const corners3D = createBox3D(vehicle);
+                
+                // Extract only the x,z coordinates for BEV view (top-down)
+                const bevCorners = corners3D.map(point => ({
+                    x: point[0],
+                    y: point[1]  // Using z as y in top-down view
+                }));
+                
+                // Create a closed polygon by adding the first point again
+                bevCorners.push(bevCorners[0]);
+                
+                bevData.push({
+                    corners: bevCorners,
+                    color: vehicle.color
+                });
+            }
+            
+            // Create Chart.js scatter plot
+            const ctx = document.getElementById('bev-canvas').getContext('2d');
+            const datasets = [];
+            
+            for (let i = 0; i < bevData.length; i++) {
+                datasets.push({
+                    label: `Vehicle ${i+1}`,
+                    data: bevData[i].corners,
+                    showLine: true,
+                    borderColor: bevData[i].color,
+                    backgroundColor: bevData[i].color.replace(')', ', 0.2)').replace('rgb', 'rgba').replace('#', 'rgba('),
+                    fill: true,
+                    pointRadius: 0
+                });
+            }
+            
+            const chart = new Chart(ctx, {
+                type: 'scatter',
+                data: {
+                    datasets: datasets
+                },
+                options: {
+                    aspectRatio: 1,
+                    scales: {
+                        x: {
+                            title: {
+                                display: true,
+                                text: 'X (meters)'
+                            },
+                            min: -100,
+                            max: 100
+                        },
+                        y: {
+                            title: {
+                                display: true,
+                                text: 'Y (meters)'
+                            },
+                            min: -50,
+                            max: 150
+                        }
+                    },
+                }
+            });
+        }
+        
+        // 2. 2D Projection of 3D Bounding Boxes
+        function create2DProjectionPlot() {
+            const canvas = document.getElementById('boxes-canvas');
+            const ctx = canvas.getContext('2d');
+            
+            // Set canvas dimensions
+            canvas.width = 800;
+            canvas.height = 500;
+            
+            // Clear the canvas
+            ctx.fillStyle = '#f0f0f0';
+            ctx.fillRect(0, 0, canvas.width, canvas.height);
+            
+            // Project 3D point to 2D using a simple perspective projection
+            function project3DTo2D(point, camera) {
+                const [x, y, z] = point;
+                const [cx, cy, cz] = camera.position;
+                const f = camera.focalLength;
+                
+                // Translate to camera space
+                const dx = x - cx;
+                const dy = y - cy;
+                const dz = z - cz;
+                
+                // Simple perspective projection
+                const scale = f / (dz + f);
+                const projX = canvas.width/2 + dx * scale * camera.zoom;
+                const projY = canvas.height/2 - dy * scale * camera.zoom; // Flip y for canvas coordinates
+                
+                return [projX, projY];
+            }
+            
+            // Define a simple camera
+            const camera = {
+                position: [0, 100, -500], // Position behind the scene
+                focalLength: 400,
+                zoom: 1.5
+            };
+            
+            // Project the 3D boxes to 2D
+            for (const vehicle of vehicles) {
+                const corners3D = createBox3D(vehicle);
+                const cornersProjected = corners3D.map(point => project3DTo2D(point, camera));
+                
+                // Draw the projected box
+                drawProjectedBox(cornersProjected, vehicle.color);
+            }
+            
+            // Draw the 3D bounding boxes' projections
+            function drawProjectedBox(corners, color) {
+                // Draw bottom face
+                ctx.beginPath();
+                ctx.moveTo(corners[0][0], corners[0][1]);
+                ctx.lineTo(corners[1][0], corners[1][1]);
+                ctx.lineTo(corners[5][0], corners[5][1]);
+                ctx.lineTo(corners[4][0], corners[4][1]);
+                ctx.closePath();
+                ctx.strokeStyle = color;
+                ctx.lineWidth = 2;
+                ctx.stroke();
+                
+                // Draw top face
+                ctx.beginPath();
+                ctx.moveTo(corners[3][0], corners[3][1]);
+                ctx.lineTo(corners[2][0], corners[2][1]);
+                ctx.lineTo(corners[6][0], corners[6][1]);
+                ctx.lineTo(corners[7][0], corners[7][1]);
+                ctx.closePath();
+                ctx.stroke();
+                
+                // Draw the 4 vertical edges
+                for (let i = 0; i < 4; i++) {
+                    ctx.beginPath();
+                    ctx.moveTo(corners[i][0], corners[i][1]);
+                    ctx.lineTo(corners[i+4][0], corners[i+4][1]);
+                    ctx.stroke();
+                }
+            }
+            
+            // Add some context text
+            ctx.fillStyle = '#000000';
+            ctx.font = '14px Arial';
+            ctx.fillText('2D Projection of 3D Bounding Boxes', 20, 30);
+            ctx.fillText('Vehicle 1 (Red)', 20, 50);
+            ctx.fillText('Vehicle 2 (Blue)', 20, 70);
+        }
+        
+        // Initialize both plots
+        document.addEventListener('DOMContentLoaded', function() {
+            createBEVPlot();
+            create2DProjectionPlot();
+        });
+    </script>
+</body>
+</html>
