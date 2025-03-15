@@ -57,6 +57,14 @@
                 flex-direction: column;
             }
         }
+        .option-container {
+            text-align: center;
+            margin-bottom: 20px;
+        }
+        select {
+            padding: 10px;
+            font-size: 16px;
+        }
     </style>
 </head>
 <body>
@@ -95,9 +103,18 @@
         function updateVisualization(option) {
             console.log("Selected option:", option);
             
-            // Clear current visualization
-            document.getElementById("bev-canvas").getContext("2d").clearRect(0, 0, 800, 400);
-            document.getElementById("boxes-canvas").getContext("2d").clearRect(0, 0, 800, 500);
+            // Clear only vehicle data from BEV plot
+            const bevCanvas = document.getElementById("bev-canvas");
+            const bevCtx = bevCanvas.getContext("2d");
+            bevCtx.clearRect(0, 0, bevCanvas.width, bevCanvas.height);
+            
+            // Always recreate BEV plot
+            createBEVPlot();
+            
+            // Clear the image view completely
+            const imgCanvas = document.getElementById("boxes-canvas");
+            const imgCtx = imgCanvas.getContext("2d");
+            imgCtx.clearRect(0, 0, imgCanvas.width, imgCanvas.height);
             
             if (option === "overlapping") {
                 createBEVPlot();
