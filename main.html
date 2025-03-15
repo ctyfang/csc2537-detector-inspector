@@ -62,6 +62,16 @@
 <body>
     <div class="container">
         <h1>Vehicle Detection Visualization</h1>
+
+        <div class="option-container">
+            <label for="visualization-options">Choose Visualization:</label>
+            <select id="visualization-options">
+                <option value="overlapping">Overlapping Bounding Boxes</option>
+                <option value="boxes-data">Boxes with Quantitative Data</option>
+                <option value="highlight-fn">Highlight False Negative</option>
+                <option value="highlight-fp">Highlight False Positive</option>
+            </select>
+        </div>
         
         <div class="plots-row">
             <div class="plot-container">
@@ -77,6 +87,45 @@
     </div>
 
     <script>
+        document.getElementById("visualization-options").addEventListener("change", function() {
+            const selectedOption = this.value;
+            updateVisualization(selectedOption);
+        });
+        
+        function updateVisualization(option) {
+            console.log("Selected option:", option);
+            
+            // Clear current visualization
+            document.getElementById("bev-canvas").getContext("2d").clearRect(0, 0, 800, 400);
+            document.getElementById("boxes-canvas").getContext("2d").clearRect(0, 0, 800, 500);
+            
+            if (option === "overlapping") {
+                createBEVPlot();
+                create2DProjectionPlot();
+            } else if (option === "boxes-data") {
+                createBoxesWithData();
+            } else if (option === "highlight-fn") {
+                highlightFalseNegative();
+            } else if (option === "highlight-fp") {
+                highlightFalsePositive();
+            }
+        }
+        
+        function createBoxesWithData() {
+            console.log("Displaying boxes with quantitative data");
+            // Implement logic to display bounding boxes with quantitative data
+        }
+        
+        function highlightFalseNegative() {
+            console.log("Highlighting false negatives");
+            // Implement logic to highlight false negatives
+        }
+        
+        function highlightFalsePositive() {
+            console.log("Highlighting false positives");
+            // Implement logic to highlight false positives
+        }
+
         // Common vehicle data that will be used for both visualizations
         const vehicles = [
             {
