@@ -12,7 +12,7 @@ label_files = os.listdir(label_dir_path)
 label_files = [file for file in label_files if file.endswith('.txt')]
 
 if label_files:
-    gt_path = os.path.join(label_dir_path, label_files[1])    # Open the first
+    gt_path = os.path.join(label_dir_path, label_files[2])    # Open the first
     # gt = np.loadtxt(gt_path, delimiter=',')
     gt = np.atleast_2d(np.loadtxt(gt_path, delimiter=','))
 else:
