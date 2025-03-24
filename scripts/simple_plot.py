@@ -46,7 +46,7 @@ img = draw_legend(img, legend_entries)
 # ax.set_title('2D Bounding Boxes')
 # plt.savefig("boxes2d_1.png")
 # plt.close(fig)
-cv2.imwrite("boxes2d_1.png", img)
+cv2.imwrite("overlapping_image.png", img)
 
 # Plot BEV Boxes
 fig, ax = plt.subplots(1, figsize=(8, 12))
@@ -66,5 +66,5 @@ for radius in [50, 100, 150]:
 ax.set_xlim([-50, 50])
 ax.set_ylim([-0, 125])
 fig.canvas.draw()
-plt.savefig("boxes3d_bev_1.png")
+plt.savefig("overlapping_bev.png")
 plt.close(fig)
