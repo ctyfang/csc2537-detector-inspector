@@ -7,6 +7,15 @@ import numpy as np
 
 # Helper functions
 def color_to_rgb(color):
+    """
+    Convert a color character to its corresponding RGB tuple.
+
+    Parameters:
+    color (str): A single character representing the color ('r' for red, 'g' for green, 'b' for blue).
+
+    Returns:
+    tuple: A tuple representing the RGB values of the color. Defaults to white (255, 255, 255) if the color is not found.
+    """
     color_dict = {
         'r': (255, 0, 0),
         'g': (0, 255, 0),
@@ -16,6 +25,19 @@ def color_to_rgb(color):
 
 # Function to plot 2D bounding boxes
 def plot_boxes(img, boxes, color, label):
+    """
+    Draws bounding boxes on an image.
+
+    Args:
+        img (numpy.ndarray): The image on which to draw the bounding boxes.
+        boxes (list of tuples): A list of bounding boxes, where each box is represented 
+                                as a tuple (class_id, x1, y1, x2, y2).
+        color (str): The color of the bounding box.
+        label (str): The label to be displayed on the bounding box.
+
+    Returns:
+        numpy.ndarray: The image with the bounding boxes drawn on it.
+    """
     for box in boxes:
         class_id, x1, y1, x2, y2 = box[:5]
         cv2.rectangle(img, (int(x1), int(y1)), (int(x2), int(y2)), color_to_rgb(color), 2)
@@ -23,6 +45,21 @@ def plot_boxes(img, boxes, color, label):
     
 # Plot 3D Boxes
 def plot_oriented_boxes_bev(ax, boxes, color, label):
+    """
+    Plots oriented bounding boxes in bird's eye view (BEV) on a given matplotlib axis.
+    Parameters:
+    ax (matplotlib.axes.Axes): The matplotlib axis to plot on.
+    boxes (list of lists or numpy.ndarray): A list or array of bounding boxes, where each box is represented by 
+                                            [x, y, z, l, w, h, yaw]. 
+                                            - x, y, z: The center coordinates of the box.
+                                            - l, w, h: The length, width, and height of the box.
+                                            - yaw: The rotation angle of the box around the z-axis.
+    color (str or tuple): The color of the bounding box edges.
+    label (str): The label for the bounding boxes.
+    Returns:
+    matplotlib.axes.Axes: The axis with the plotted bounding boxes.
+    """
+    
     for box in boxes:
         x, y, z, l, w, h, yaw = box[5:]
         corners = np.array([

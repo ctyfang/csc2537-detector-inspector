@@ -36,4 +36,4 @@ data/
 - `calibration/`: Contains calibration files for the sensors.
 - `images/`: Contains image files used for detection.
 - `labels/`: Contains ground truth label files. Each row is formatted as `label_class, [x1, y1, x2, y2], [x, y, z, l, w, h, yaw]`
-- `model_outputs/`: Contains output files from different models, organized by model name. The outputs are formatted in the same way as the labels.
+- `model_outputs/`: Contains output files from different models, organized by model name. The outputs are formatted in the same way as the labels. Sample data was generated using MMDetection3D with the two publicly available. FCOS3D model checkpoints
