@@ -20,6 +20,17 @@ def color_to_rgb(color):
     }
     return color_dict.get(color, (255, 255, 255))  # Default to white if color not found
 
+def color_to_bgr(color):
+    """
+    For OpenCV as it uses BGR
+    """
+    color_dict = {
+        'r': (0, 0, 255),   # Red
+        'g': (0, 255, 0),   # Green
+        'b': (255, 0, 0)    # Blue
+    }
+    return color_dict.get(color, (255, 255, 255))
+
 # Function to plot 2D bounding boxes
 def plot_boxes(img, boxes, color, label):
     """
@@ -36,14 +47,18 @@ def plot_boxes(img, boxes, color, label):
         numpy.ndarray: The image with the bounding boxes drawn on it.
     """
     boxes = np.atleast_2d(boxes)
+
+    if isinstance(color, str):
+        draw_color = color_to_bgr(color)
+    elif isinstance(color, tuple) and max(color) <= 1.0:
+        # If matplotlib color [0-1], convert to OpenCV BGR
+        draw_color = tuple(int(c * 255) for c in color)
+    else:
+        draw_color = color  # Already OpenCV-compatible tuple
+
     for box in boxes:
         class_id, x1, y1, x2, y2 = box[:5]
-        cv2.rectangle(img, (int(x1), int(y1)), (int(x2), int(y2)), color_to_rgb(color), 2)
-        if label:
-            cv2.putText(
-                img, label, (int(x1), int(y1) - 10),
-                cv2.FONT_HERSHEY_SIMPLEX, 0.5, color_to_rgb(color), 1, cv2.LINE_AA
-            )
+        cv2.rectangle(img, (int(x1), int(y1)), (int(x2), int(y2)), draw_color, 2)
     return img
     
 # Plot 3D Boxes
@@ -172,3 +187,39 @@ def plot_pred_oriented_bboxes(boxes, ax=None, color=None, alpha=0.7, linewidth=2
                         linewidth=linewidth)
         ax.add_patch(polygon)
     return ax
+
+def draw_legend(img, entries):
+    """
+    Draws legend labels on the top-left corner of the image.
+    
+    Parameters:
+    img (np.ndarray): The image to draw on
+    entries (list of tuples): List like [("Model A FN", "b"), ("Model B FN", "r"), ...]
+    
+    Returns:
+    np.ndarray: Image with legend drawn
+    """
+    font = cv2.FONT_HERSHEY_SIMPLEX
+    font_scale = 0.5
+    thickness = 1
+    line_height = 20
+    margin = 10
+    x = margin
+    y = margin + line_height
+
+    for text, color in entries:
+        if isinstance(color, str):
+            bgr = color_to_bgr(color)
+        elif isinstance(color, tuple) and max(color) <= 1.0:
+            r, g, b = color
+            bgr = (int(b * 255), int(g * 255), int(r * 255))
+        else:
+            bgr = color  # assume OpenCV BGR tuple
+
+        # Draw a small color box
+        cv2.rectangle(img, (x, y - 12), (x + 12, y), bgr, -1)
+        # Draw the label text
+        cv2.putText(img, text, (x + 18, y), font, font_scale, (255, 255, 255), thickness, cv2.LINE_AA)
+        y += line_height + 5
+
+    return img
