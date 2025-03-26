@@ -73,6 +73,7 @@ function updateCalibration() {
              <p>Make sure "${csvFileName}" is in the same folder as this HTML file.</p>`;
     });
 }
+
 function updateImages() {
     const selectedMode = visualizationSelect.value;
     const scenePath = getSceneFolder(currentSceneIndex);
@@ -80,34 +81,38 @@ function updateImages() {
 
     const imageMap = {
         'overlapping': ['overlapping_bev.png', 'overlapping_image.png'],
-        'boxes-data': ['overlapping_bev.png', 'overlapping_image.png'],
         'highlight-fn': ['false_negative_bev.png', 'false_negative_image.png'],
         'highlight-fp': ['false_positive_bev.png', 'false_positive_image.png']
     };
 
     const [bevFile, imageFile] = imageMap[selectedMode];
 
-    bevImage.src = `${scenePath}/${bevFile}`;
-    imageView.src = `${scenePath}/${imageFile}`;
     sceneLabel.textContent = `Scene ${padSceneIndex(currentSceneIndex)}`;
 
-    // Draw the image
-    bevCtx.drawImage(bevImage, 0, 0, bevCanvas.width, bevCanvas.height);
-    imageCtx.drawImage(imageView, 0, 0, imageCanvas.width, imageCanvas.height);
+    bevImage.onload = () => {
+        bevCtx.clearRect(0, 0, bevCanvas.width, bevCanvas.height);
+        bevCtx.drawImage(bevImage, 0, 0, bevCanvas.width, bevCanvas.height);
+        bevCtx.beginPath();
+        bevCtx.arc(lastX, lastY, radius, 0, Math.PI * 2);
+        bevCtx.strokeStyle = '#000';
+        bevCtx.lineWidth = 2;
+        bevCtx.stroke();
+    };
+    imageView.onload = () => {
+        imageCtx.clearRect(0, 0, imageCanvas.width, imageCanvas.height);
+        imageCtx.drawImage(imageView, 0, 0, imageCanvas.width, imageCanvas.height);
+        const imageCoords = computeImageCoordinates();
+        imageCtx.beginPath();
+        imageCtx.arc(imageCoords.x, imageCoords.y, imageRadius, 0, Math.PI * 2);
+        imageCtx.strokeStyle = '#000';
+        imageCtx.lineWidth = 2;
+        imageCtx.stroke();
+    };
 
-    bevCtx.beginPath();
-    bevCtx.arc(lastX, lastY, radius, 0, Math.PI * 2);
-    bevCtx.strokeStyle = '#000';
-    bevCtx.lineWidth = 2;
-    bevCtx.stroke();
-
-    imageCoords = computeImageCoordinates();
-    imageCtx.beginPath();
-    imageCtx.arc(imageCoords.x, imageCoords.y, imageRadius, 0, Math.PI * 2);
-    imageCtx.strokeStyle = '#000';
-    imageCtx.lineWidth = 2;
-    imageCtx.stroke();
+    bevImage.src = `${scenePath}/${bevFile}`;
+    imageView.src = `${scenePath}/${imageFile}`;
 }
+
 
 // Event Listeners
 document.getElementById("prev-scene").addEventListener("click", () => {
