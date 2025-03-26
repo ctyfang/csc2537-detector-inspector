@@ -1,48 +1,144 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-    <meta charset="UTF-8" />
-    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>Detector Inspector</title>
-    <link rel="stylesheet" href="style.css" />
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Bird's Eye View Bounding Box Visualization</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            margin: 0;
+            padding: 20px;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+        }
+        
+        h1 {
+            margin-bottom: 20px;
+        }
+        
+        .container {
+            max-width: 1000px;
+            width: 100%;
+            margin: 0 auto;
+        }
+        
+        .controls {
+            margin-bottom: 15px;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+        
+        #fileInput {
+            margin-right: 20px;
+        }
+        
+        #visualization {
+            border: 1px solid #ccc;
+            background-color: white;
+            position: relative;
+        }
+        
+        canvas {
+            display: block;
+            cursor: crosshair;
+        }
+        
+        .info-panel {
+            margin-top: 20px;
+            padding: 15px;
+            border: 1px solid #ccc;
+            border-radius: 5px;
+            background-color: #f9f9f9;
+            width: 100%;
+        }
+        
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            margin-top: 10px;
+        }
+        
+        table, th, td {
+            border: 1px solid #ddd;
+        }
+        
+        th, td {
+            padding: 8px;
+            text-align: left;
+        }
+        
+        th {
+            background-color: #f2f2f2;
+        }
+        
+        tr:hover {
+            background-color: #f5f5f5;
+        }
+        
+        #coordinates {
+            font-weight: bold;
+            margin-top: 10px;
+        }
+        
+        .box-info {
+            max-height: 300px;
+            overflow-y: auto;
+        }
+    </style>
 </head>
 <body>
     <div class="container">
-        <h1>Detector Inspector</h1>
-
-        <div class="option-container">
-            <label for="visualization-options">Choose Visualization:</label>
-            <select id="visualization-options">
-                <option value="overlapping">Overlapping Bounding Boxes</option>
-                <option value="boxes-data">Boxes with Quantitative Data</option>
-                <option value="highlight-fn">Highlight False Negative</option>
-                <option value="highlight-fp">Highlight False Positive</option>
-            </select>
+        <h1>Bird's Eye View Bounding Box Visualization</h1>
+        
+        <div class="info-panel">
+            <p><strong>Local CSV File:</strong> Place a file named <code>bounding_boxes.csv</code> in the same folder as this HTML file and click "Load Default CSV" to load it.</p>
         </div>
-
-        <div class="scene-nav">
-            <button id="prev-scene">← Prev Scene</button>
-            <span id="scene-label">Scene #</span>
-            <button id="next-scene">Next Scene →</button>
+        
+        <div class="controls">
+            <label for="fileInput">Upload CSV: </label>
+            <input type="file" id="fileInput" accept=".csv">
+            
+            <label for="scaleSlider">Scale: </label>
+            <input type="range" id="scaleSlider" min="0.5" max="2" step="0.1" value="1">
+            <span id="scaleValue">1.0x</span>
         </div>
-
-        <div class="plots-row">
-            <div class="plot-container bev-container">
-                <h2>Bird's Eye View</h2>
-                <img id="bev-img" src="" alt="BEV Plot" style="width: 100%;">
+        
+        <div id="visualization">
+            <canvas id="canvas" width="800" height="600"></canvas>
+        </div>
+        
+        <div id="coordinates" class="info-panel">
+            Click on the canvas to see coordinates
+        </div>
+        
+        <div class="info-panel">
+            <h3>Bounding Boxes</h3>
+            <div class="box-info">
+                <table id="boxesTable">
+                    <thead>
+                        <tr>
+                            <th>Label</th>
+                            <th>X</th>
+                            <th>Y</th>
+                            <th>Width</th>
+                            <th>Height</th>
+                        </tr>
+                    </thead>
+                    <tbody id="boxesTableBody">
+                        <!-- Data will be populated here -->
+                    </tbody>
+                </table>
             </div>
-            <div class="plot-container image-container">
-                <h2>Image View</h2>
-                <img id="image-img" src="" alt="Image View" style="width: 100%;">
-            </div>
-        </div>
-
-        <div id="data-table-container" class="plot-container" style="display: none;">
-            <h2>Quantitative Data</h2>
-            <div id="data-table"></div>
         </div>
     </div>
 
+    <!-- Import PapaParse library for CSV parsing -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/PapaParse/5.3.0/papaparse.min.js"></script>
+    
+    <!-- Your main JavaScript file -->
     <script src="main.js"></script>
 </body>
 </html>
