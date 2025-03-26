@@ -10,8 +10,6 @@
             margin: 0;
             padding: 20px;
             display: flex;
-            flex-direction: column;
-            align-items: center;
         }
         
         h1 {
@@ -19,26 +17,17 @@
         }
         
         .container {
-            max-width: 1000px;
+            display: flex;
+            justify-content: center;
             width: 100%;
             margin: 0 auto;
-        }
-        
-        .controls {
-            margin-bottom: 15px;
-            display: flex;
-            align-items: center;
-            gap: 10px;
-        }
-        
-        #fileInput {
-            margin-right: 20px;
+            flex-wrap: wrap;
+            gap: 20px;
         }
         
         #visualization {
             border: 1px solid #ccc;
             background-color: white;
-            position: relative;
         }
         
         canvas {
@@ -91,25 +80,12 @@
 </head>
 <body>
     <div class="container">
-        <h1>Bird's Eye View Bounding Box Visualization</h1>
-        
-        <div class="info-panel">
-            <p><strong>Local CSV File:</strong> Place a file named <code>bounding_boxes.csv</code> in the same folder as this HTML file and click "Load Default CSV" to load it.</p>
-        </div>
-        
-        <div class="controls">
-            <label for="fileInput">Upload CSV: </label>
-            <input type="file" id="fileInput" accept=".csv">
-            
-            <label for="scaleSlider">Scale: </label>
-            <input type="range" id="scaleSlider" min="0.5" max="2" step="0.1" value="1">
-            <span id="scaleValue">1.0x</span>
-        </div>
-        
         <div id="visualization">
-            <canvas id="canvas" width="800" height="600"></canvas>
+            <canvas id="bev_canvas" width="600" height="600"></canvas>
         </div>
-        
+        <div id="visualization">
+            <canvas id="image_canvas" width="800" height="600"></canvas>
+        </div>
         <div id="coordinates" class="info-panel">
             Click on the canvas to see coordinates
         </div>

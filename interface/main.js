@@ -13,42 +13,15 @@ let imageProperties = {
     loaded: false
 };
 
-// Initialize the application
-document.addEventListener('DOMContentLoaded', function() {
-    // Get DOM elements
-    canvas = document.getElementById('canvas');
-    ctx = canvas.getContext('2d');
-    const fileInput = document.getElementById('fileInput');
-    const scaleSlider = document.getElementById('scaleSlider');
-    const scaleValue = document.getElementById('scaleValue');
-    
-    // Set up event listeners
-    canvas.addEventListener('click', handleCanvasClick);
-    scaleSlider.addEventListener('input', function() {
-        scale = parseFloat(this.value);
-        scaleValue.textContent = scale.toFixed(1) + 'x';
-        renderVisualization();
-    });
-    
-    loadLocalCSV();
-});
 
 // Initialize the application
 document.addEventListener('DOMContentLoaded', function() {
     // Get DOM elements
-    canvas = document.getElementById('canvas');
+    canvas = document.getElementById('image_canvas');
     ctx = canvas.getContext('2d');
-    const scaleSlider = document.getElementById('scaleSlider');
-    const scaleValue = document.getElementById('scaleValue');
-    
+
     // Set up event listeners
     canvas.addEventListener('click', handleCanvasClick);
-    scaleSlider.addEventListener('input', function() {
-        scale = parseFloat(this.value);
-        scaleValue.textContent = scale.toFixed(1) + 'x';
-        renderVisualization();
-    });
-    
     
     loadLocalImage();
     
@@ -62,25 +35,16 @@ document.addEventListener('DOMContentLoaded', function() {
 function handleCanvasClick(event) {
     const rect = canvas.getBoundingClientRect();
     
-    // Calculate coordinates based on canvas scale
-    // Use standard image coordinates (origin at top-left)
+    // Calculate coordinates in the image space
     const canvasX = event.clientX - rect.left;
     const canvasY = event.clientY - rect.top;
     
-    let x, y;
-    
-    if (imageProperties.loaded) {
-        // Convert canvas coordinates to image coordinates
-        x = canvasX / canvas.width * imageProperties.width;
-        y = canvasY / canvas.height * imageProperties.height;
-    } else {
-        // Use normal coordinate calculation
-        x = canvasX / scale;
-        y = canvasY / scale;
-    }
+    // Convert canvas coordinates to image coordinates
+    const x = canvasX / canvas.width * imageProperties.width;
+    const y = canvasY / canvas.height * imageProperties.height;
     
     // Log the clicked coordinates to the console
-    console.log(`Clicked at coordinates: (${x.toFixed(2)}, ${y.toFixed(2)})`);
+    console.log(`Clicked at image coordinates: (${x.toFixed(2)}, ${y.toFixed(2)})`);
     
     // Update the coordinates display
     const coordinatesDiv = document.getElementById('coordinates');
@@ -94,23 +58,74 @@ function handleCanvasClick(event) {
 // Parse CSV data
 function parseCSV(csvData) {
     Papa.parse(csvData, {
-        header: false,
+        header: false, // CSV doesn't have headers but specific column order
         dynamicTyping: true, // Automatically convert numeric strings to numbers
         skipEmptyLines: true,
         complete: function(results) {
-            console.log('Parsed CSV data:', results.data);
-            boundingBoxes = results.data;
+            console.log('Parsed CSV data:', results);
             
-            // Validate data format
-            const isValid = validateBoundingBoxData(boundingBoxes);
-            if (!isValid) {
-                alert('CSV format is invalid. Please ensure it has x, y, width, height, and label columns.');
-                return;
+            if (results.data && results.data.length > 0) {
+                // Process the custom CSV format:
+                // [class, x1, y1, x2, y2, x, y, z, length, width, height, yaw]
+                boundingBoxes = results.data.map((row, index) => {
+                    // Ensure the row has enough columns
+                    if (row.length < 12) {
+                        console.error(`Row ${index} has fewer than 12 columns:`, row);
+                        return null;
+                    }
+                    
+                    // Extract 2D bounding box from (x1,y1,x2,y2)
+                    const className = row[0] || `Box-${index}`;
+                    const x1 = parseFloat(row[1]);
+                    const y1 = parseFloat(row[2]);
+                    const x2 = parseFloat(row[3]);
+                    const y2 = parseFloat(row[4]);
+                    
+                    // Calculate width and height from corner points
+                    const x = Math.min(x1, x2);
+                    const y = Math.min(y1, y2);
+                    const width = Math.abs(x2 - x1);
+                    const height = Math.abs(y2 - y1);
+                    
+                    // Store 3D data too
+                    const box3D = {
+                        x: parseFloat(row[5]),
+                        y: parseFloat(row[6]),
+                        z: parseFloat(row[7]),
+                        length: parseFloat(row[8]),
+                        width: parseFloat(row[9]),
+                        height: parseFloat(row[10]),
+                        yaw: parseFloat(row[11])
+                    };
+                    
+                    return {
+                        label: className,
+                        x: x,
+                        y: y,
+                        width: width,
+                        height: height,
+                        x1: x1,
+                        y1: y1,
+                        x2: x2,
+                        y2: y2,
+                        box3D: box3D
+                    };
+                }).filter(box => box !== null && box.width > 0 && box.height > 0); // Filter out invalid boxes
+                
+                console.log('Processed bounding boxes:', boundingBoxes);
+                
+                // Validate data format
+                if (boundingBoxes.length === 0) {
+                    alert('No valid bounding boxes found in the CSV. Please check your file format.');
+                    return;
+                }
+                
+                // Update visualization and table
+                renderVisualization();
+                updateBoundingBoxTable();
+            } else {
+                alert('No data found in the CSV file.');
             }
-            
-            // Update visualization and table
-            renderVisualization();
-            updateBoundingBoxTable();
         },
         error: function(error) {
             console.error('Error parsing CSV:', error);
@@ -122,13 +137,6 @@ function parseCSV(csvData) {
 // Validate bounding box data format
 function validateBoundingBoxData(data) {
     return true;
-    if (!data || data.length === 0) return false;
-    
-    // Check if first item has required properties
-    const requiredProps = ['class_idx', 'x1', 'y1', 'x2', 'y2', 'x', 'y', 'z', 'length', 'width', 'height', 'yaw'];
-    const firstItem = data[0];
-    
-    return requiredProps.every(prop => prop in firstItem);
 }
 
 // Load a local image from the same folder
@@ -206,26 +214,44 @@ function updateBoundingBoxTable() {
     boundingBoxes.forEach((box, index) => {
         const row = document.createElement('tr');
         
-        const labelCell = document.createElement('td');
-        labelCell.textContent = box[0];
+        // Add basic 2D info
+        const classCell = document.createElement('td');
+        classCell.textContent = box.label;
         
-        const xCell = document.createElement('td');
-        xCell.textContent = box[1];
+        const cornerCell = document.createElement('td');
+        cornerCell.textContent = `(${box.x1.toFixed(1)}, ${box.y1.toFixed(1)}) to (${box.x2.toFixed(1)}, ${box.y2.toFixed(1)})`;
         
-        const yCell = document.createElement('td');
-        yCell.textContent = box[2];
+        const dimCell = document.createElement('td');
+        dimCell.textContent = `${box.width.toFixed(1)} × ${box.height.toFixed(1)}`;
         
-        const widthCell = document.createElement('td');
-        widthCell.textContent = box[3];
+        // Add 3D info if available
+        const pos3dCell = document.createElement('td');
+        if (box.box3D) {
+            pos3dCell.textContent = `(${box.box3D.x.toFixed(1)}, ${box.box3D.y.toFixed(1)}, ${box.box3D.z.toFixed(1)})`;
+        } else {
+            pos3dCell.textContent = 'N/A';
+        }
         
-        const heightCell = document.createElement('td');
-        heightCell.textContent = box[4];
+        const dim3dCell = document.createElement('td');
+        if (box.box3D) {
+            dim3dCell.textContent = `${box.box3D.length.toFixed(1)} × ${box.box3D.width.toFixed(1)} × ${box.box3D.height.toFixed(1)}`;
+        } else {
+            dim3dCell.textContent = 'N/A';
+        }
         
-        row.appendChild(labelCell);
-        row.appendChild(xCell);
-        row.appendChild(yCell);
-        row.appendChild(widthCell);
-        row.appendChild(heightCell);
+        const yawCell = document.createElement('td');
+        if (box.box3D) {
+            yawCell.textContent = `${box.box3D.yaw.toFixed(2)} rad`;
+        } else {
+            yawCell.textContent = 'N/A';
+        }
+        
+        row.appendChild(classCell);
+        row.appendChild(cornerCell);
+        row.appendChild(dimCell);
+        row.appendChild(pos3dCell);
+        row.appendChild(dim3dCell);
+        row.appendChild(yawCell);
         
         // Highlight row on hover to see relationship with visualization
         row.addEventListener('mouseover', () => {
@@ -395,16 +421,11 @@ function drawBoundingBoxes() {
         ctx.lineWidth = imageProperties.loaded ? 3 : 2; // Thicker lines if image is loaded
         
         // Use direct coordinates (origin at top-left)
-        let x = box[1];
-        let y = box[2];
-        let width = (box[3] - box[1]);
-        let height = (box[4] - box[2]);
+        let x = box.x;
+        let y = box.y;
+        let width = box.width;
+        let height = box.height;
 
-        // let x = 10;
-        // let y = 20;
-        // let width = 10;
-        // let height = 20;
-        
         ctx.fillRect(x, y, width, height);
         ctx.strokeRect(x, y, width, height);
     });
