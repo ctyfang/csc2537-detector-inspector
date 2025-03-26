@@ -8,9 +8,9 @@ import matplotlib.patches as mpatches
 from utils import plot_boxes, plot_pred_oriented_bboxes, draw_legend
 
 """
-Run
-`python diff_plot.py --mode fp` to highlight false positive objects
-`python diff_plot.py --mode fn` to highlight false negative objects
+Example:
+`python diff_plot.py --filename d46ff5df-95e8-32da-a0d7-87f7b976a959_315971495049927217.txt --mode fn` to highlight false positive objects
+`python diff_plot.py --filename d46ff5df-95e8-32da-a0d7-87f7b976a959_315971495049927217.txt --mode fn` to highlight false negative objects
 """
 
 def compute_iou(box1, box2):
@@ -53,17 +53,27 @@ def main():
     parser = argparse.ArgumentParser()
     parser.add_argument('--mode', choices=['fp', 'fn'], required=True, help="fp (false positives) or fn (false negatives)")
     parser.add_argument('--index', type=int, default=1, help="Index of the frame to visualize")
+    parser.add_argument('--filename', type=str, help="Name of the file to visualize (overrides index)")
     parser.add_argument('--threshold', type=float, default=0.5, help="IoU threshold")
     args = parser.parse_args()
 
-    label_dir = 'D:/Master/Courses/Information Visualization/csc2537-detector-inspector/data/labels'
+    label_dir = '../data/labels'
     image_dir = os.path.join(label_dir, "..", "images")
     model_dir = os.path.join(label_dir, "..", "model_outputs")
     model_names = ["fcos3d", "fcos3d_finetune"]
     colors = ['b', 'r']
 
     label_files = sorted([f for f in os.listdir(label_dir) if f.endswith('.txt')])
-    filename = label_files[args.index]
+    
+    if args.filename:
+        filename = args.filename
+        if filename not in label_files:
+            raise FileNotFoundError(f"Specified file '{filename}' not found in {label_dir}")
+    else:
+        if args.index < 0 or args.index >= len(label_files):
+            raise IndexError(f"Index {args.index} out of range. Only {len(label_files)} label files available.")
+        filename = label_files[args.index]
+
     gt = np.atleast_2d(np.loadtxt(os.path.join(label_dir, filename), delimiter=','))
     img = cv2.imread(os.path.join(image_dir, filename.replace('.txt', '.jpg')))
     preds = [np.atleast_2d(np.loadtxt(os.path.join(model_dir, m, filename), delimiter=',')) for m in model_names]

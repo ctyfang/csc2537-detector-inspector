@@ -6,14 +6,14 @@ import numpy as np
 from utils import plot_boxes, plot_oriented_boxes_bev, plot_pred_oriented_bboxes, draw_legend
 
 # Load the GT
-# label_dir_path = '/home/cfang/git/csc2537-detector-inspector/data/labels'
-label_dir_path = 'D:/Master/Courses/Information Visualization/csc2537-detector-inspector/data/labels'
+script_dir = os.path.dirname(os.path.abspath(__file__))
+label_dir_path = os.path.join(script_dir, '../data/labels')
 label_files = os.listdir(label_dir_path)
 label_files = [file for file in label_files if file.endswith('.txt')]
 
 if label_files:
-    gt_path = os.path.join(label_dir_path, label_files[2])    # Open the first
-    # gt = np.loadtxt(gt_path, delimiter=',')
+    # gt_path = os.path.join(label_dir_path, label_files[0])    # Open the first
+    gt_path = os.path.join(script_dir, '../data/labels/d46ff5df-95e8-32da-a0d7-87f7b976a959_315971495049927217.txt')    # Choose the file you want to look at
     gt = np.atleast_2d(np.loadtxt(gt_path, delimiter=','))
 else:
     print("No text files found in the directory.")
@@ -29,7 +29,6 @@ model_preds = []
 for model_name in model_names:
     pred_path = os.path.join(label_dir_path, "..", "model_outputs", model_name, gt_filename)
     assert os.path.exists(pred_path), "Corresponding predictions not found"
-    # model_preds.append(np.loadtxt(pred_path, delimiter=','))
     model_preds.append(np.atleast_2d(np.loadtxt(pred_path, delimiter=',')))
 
 # Plot 2D Boxes
@@ -42,10 +41,6 @@ fig, ax = plt.subplots(1, figsize=(12, 8))
 legend_entries = [("Model A", 'r'), ("Model B", 'b'), ("Ground Truth", 'g')]
 img = draw_legend(img, legend_entries)
 
-# ax.imshow(img)
-# ax.set_title('2D Bounding Boxes')
-# plt.savefig("boxes2d_1.png")
-# plt.close(fig)
 cv2.imwrite("overlapping_image.png", img)
 
 # Plot BEV Boxes
