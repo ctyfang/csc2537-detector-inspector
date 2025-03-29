@@ -15,7 +15,7 @@ let betaY = 535.0 * 50.0 / 185.0;
 let radius = 10;
 let imageRadius = 50;
 
-let yCamFixed = 2;
+let yCamFixed = 1;
 let intrinsics = [[1, 0, 0], [0, 1, 0], [0, 0, 1]];
 
 // Set up the images
@@ -94,7 +94,7 @@ function updateImages() {
         bevCtx.drawImage(bevImage, 0, 0, bevCanvas.width, bevCanvas.height);
         bevCtx.beginPath();
         bevCtx.arc(lastX, lastY, radius, 0, Math.PI * 2);
-        bevCtx.strokeStyle = '#000';
+        bevCtx.strokeStyle = '#FFFF00'; // Yellow color in hex
         bevCtx.lineWidth = 2;
         bevCtx.stroke();
     };
@@ -104,7 +104,7 @@ function updateImages() {
         const imageCoords = computeImageCoordinates();
         imageCtx.beginPath();
         imageCtx.arc(imageCoords.x, imageCoords.y, imageRadius, 0, Math.PI * 2);
-        imageCtx.strokeStyle = '#000';
+        imageCtx.strokeStyle = '#FFFF00';;
         imageCtx.lineWidth = 2;
         imageCtx.stroke();
     };
