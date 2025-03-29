@@ -37,3 +37,14 @@ data/
 - `images/`: Contains image files used for detection.
 - `labels/`: Contains ground truth label files. Each row is formatted as `label_class, [x1, y1, x2, y2], [x, y, z, l, w, h, yaw]`
 - `model_outputs/`: Contains output files from different models, organized by model name. The outputs are formatted in the same way as the labels. Sample data was generated using MMDetection3D with the two publicly available. FCOS3D model checkpoints
+
+## Requirements
+
+To run the scripts in this project, ensure you have the following dependencies installed:
+
+- Python 3.8
+- PyTorch 2.1
+- CUDA 12.1
+- MMCV 1.7.2
+- MMDetection 2.27.2
+- MMDetection3D 1.0.0rc6
